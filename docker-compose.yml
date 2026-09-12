@@ -1,0 +1,38 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://securevoice:securevoice@postgres:5432/securevoice
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: development-only-change-before-deployment
+      CORS_ORIGINS: http://localhost:8080
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: change-me-now
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: securevoice
+      POSTGRES_USER: securevoice
+      POSTGRES_PASSWORD: securevoice
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U securevoice -d securevoice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+volumes:
+  postgres_data:
